@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const protect = require('../middleware/jwt');
+const { protectRoute } = require('../middleware/jwt');
 const RequestAppointment = require('../models/requestAppointment');
 
 // Protect the route using the middleware
-router.post('/request', protect, async (req, res) => {
+router.post('/request', protectRoute, async (req, res) => {
   try {
     // Extract user information from the authenticated request
     const userId = req.user._id; // Assuming req.user contains user information
@@ -25,6 +25,7 @@ router.post('/request', protect, async (req, res) => {
     // Return a JSON response with the created appointment request details
     res.status(201).json({
       message: 'Appointment request submitted successfully.',
+      username: req.user.username,
       appointmentRequest: {
         _id: appointmentRequest._id,
         user: appointmentRequest.user,
