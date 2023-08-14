@@ -2,11 +2,6 @@ const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
-  matric_number: {
-    type: String,
-    required: true,
-    unique: true,
-  },
   hashed_matric_number: {
     type: String,
     required: true,

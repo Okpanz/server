@@ -11,6 +11,15 @@ router.post('/signup', async (req, res) => {
   try {
     const { matric_number, username, password } = req.body;
 
+    const user = await User.findOne({username})
+    // check if username exists
+    if(user) {
+      return res.status(400).json({
+        success: false,
+        message: "Username already exists"
+      })
+    }
+
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
@@ -19,7 +28,7 @@ router.post('/signup', async (req, res) => {
 
     // Create a new user
     const newUser = new User({
-      matric_number: hashedMatricNumber,
+      hashed_matric_number: hashedMatricNumber,
       username: username,
       password: hashedPassword,
       isAdmin: false, // Set isAdmin to false by default
@@ -30,7 +39,7 @@ router.post('/signup', async (req, res) => {
 
     res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
-    res.status(500).json({ error: 'An error occurred' });
+    res.status(500).json({ error: 'An error occurred' })
   }
 });
 
