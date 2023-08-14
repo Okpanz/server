@@ -1,4 +1,3 @@
-// models/requestAppointment.js
 const mongoose = require('mongoose');
 
 const requestAppointmentSchema = new mongoose.Schema({
@@ -21,6 +20,15 @@ const requestAppointmentSchema = new mongoose.Schema({
     enum: ['pending', 'approved', 'rejected'],
     default: 'pending',
   },
+  scheduledDate: {
+    type: Date, // You can adjust the type to match your needs
+  },
+  notifications: [
+    {
+      action: String,
+      timestamp: Date,
+    }
+  ]
 });
 
 const RequestAppointment = mongoose.model('RequestAppointment', requestAppointmentSchema);
