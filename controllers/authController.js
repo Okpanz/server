@@ -3,7 +3,7 @@ const bcrypt = require('bcrypt');
 const User = require('../models/userSchema');
 const jwt = require('jsonwebtoken');
 const secretKey = '1314nfgwsf454'; // Replace with your actual secret key
-
+ const generateToken = require('../config/createToken')
 const router = express.Router();
 
 // Signup route
@@ -34,9 +34,6 @@ router.post('/signup', async (req, res) => {
   }
 });
 
-// Login route
-
-// Inside your login route
 router.post('/login', async (req, res) => {
   try {
     const { username, password } = req.body;
@@ -55,20 +52,24 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
-    // If login is successful, generate a JWT
-    const token = jwt.sign(
-      { userId: user._id, username: user.username, isAdmin: user.isAdmin },
-      secretKey,
-      { expiresIn: '1d' } // Token expiration time
-    );
+    // If login is successful, generate a JWT token using the generateToken function
+    const token = generateToken({
+      userId: user._id,
+      username: user.username,
+      isAdmin: user.isAdmin,
+    });
 
     res.status(200).json({
       message: 'Login successful',
       token: token,
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ error: 'An error occurred' });
   }
 });
+
+// ...
+
 
 module.exports = router;

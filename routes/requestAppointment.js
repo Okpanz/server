@@ -1,43 +1,41 @@
 const express = require('express');
 const router = express.Router();
-const authMiddleware = require('../middleware/jwt');
+const protect = require('../middleware/jwt');
 const RequestAppointment = require('../models/requestAppointment');
-const User = require('../models/userSchema');
 
-// Create a new appointment request
-router.post('/request-appointment', authMiddleware, async (req, res) => {
-  const { reason, urgency } = req.body;
-
+// Protect the route using the middleware
+router.post('/request', protect, async (req, res) => {
   try {
-    const user = req.user; // Authenticated user from the middleware
+    // Extract user information from the authenticated request
+    const userId = req.user._id; // Assuming req.user contains user information
 
-    const newRequest = new RequestAppointment({
-      user: user._id,
-      reason,
-      urgency,
+    // Extract other necessary information from the request body
+    const { reason, urgency } = req.body;
+
+    // Create a new appointment request using the RequestAppointment model
+    const appointmentRequest = new RequestAppointment({
+      user: userId,
+      reason: reason,
+      urgency: urgency,
     });
 
-    await newRequest.save();
-    res.json({ message: 'Appointment request created successfully' });
+    // Save the appointment request to the database
+    await appointmentRequest.save();
+
+    // Return a JSON response with the created appointment request details
+    res.status(201).json({
+      message: 'Appointment request submitted successfully.',
+      appointmentRequest: {
+        _id: appointmentRequest._id,
+        user: appointmentRequest.user,
+        reason: appointmentRequest.reason,
+        urgency: appointmentRequest.urgency,
+        status: appointmentRequest.status,
+      },
+    });
   } catch (error) {
-    console.error('Error creating appointment request:', error);
-    res.status(500).json({ message: 'Internal server error' });
-  }
-});
-
-// Get all appointment requests with additional user information
-router.get('/appointment-requests', authMiddleware, async (req, res) => {
-  try {
-    const user = req.user; // Authenticated user from the middleware
-
-    const requests = await RequestAppointment.find({ user: user._id })
-      .populate('user', 'username')
-      .select('reason status urgency');
-
-    res.json({ appointmentRequests: requests });
-  } catch (error) {
-    console.error('Error fetching appointment requests:', error);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error(error);
+    res.status(500).json({ message: 'An error occurred while submitting the appointment request.' });
   }
 });
 

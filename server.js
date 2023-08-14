@@ -5,7 +5,7 @@ const authRoute = require('./controllers/authController')
 const port = process.env.PORT ; // Use port from environment variable or default to 3000
 const mongoDB = require('./config/db')
 const cors = require('cors')
-const protectRoute = require('./middleware/jwt')
+const {protectRoute} = require('./middleware/jwt')
 const requestAppointment = require('./routes/requestAppointment')
 mongoDB()
 // Middleware to parse JSON requests
