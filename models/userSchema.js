@@ -19,7 +19,25 @@ const userSchema = new mongoose.Schema({
   isAdmin: {
     type: Boolean,
 required:false
-  }
+  },
+  activeChats: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User', // Reference to the other user in the chat
+    },
+  ],
+  chatMessages: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'ChatMessage', // Reference to the chat messages
+    },],
+  notifications: [
+    {
+      action: String,
+      message: String,
+      timestamp: Date,
+    },
+  ]
 });
 
 

@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const Student = require('./models/Student'); // Adjust the path to your Student model
+const Student = require('./models/userSchema'); // Adjust the path to your Student model
 const bcrypt = require('bcrypt');
 
 const adminData = {

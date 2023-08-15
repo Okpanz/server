@@ -1,12 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const { protectRoute } = require('../middleware/jwt');
+const { protectRoute, adminProtect } = require('../middleware/jwt');
 const RequestAppointment = require('../models/requestAppointment');
+const User = require('../models/userSchema')
 
 // Protect the route using the middleware
+
+
 router.post('/request', protectRoute, async (req, res) => {
   try {
-    // Extract user information from the authenticated request
     const userId = req.user._id; // Assuming req.user contains user information
 
     // Extract other necessary information from the request body
@@ -21,6 +23,21 @@ router.post('/request', protectRoute, async (req, res) => {
 
     // Save the appointment request to the database
     await appointmentRequest.save();
+
+    // Notify the admin about the new appointment
+    const admin = await User.findOne({ isAdmin: true }); // Fetch the admin user
+    if (admin) {
+      // Construct the admin notification
+      const adminNotification = {
+        action: 'new_appointment',
+        message: `${userId} sent an appointment request.`,
+        timestamp: new Date(),
+      };
+
+      // Add the notification to the admin's notifications array
+      admin.notifications.push(adminNotification);
+      await admin.save(); // Save the admin user with the new notification
+    }
 
     // Return a JSON response with the created appointment request details
     res.status(201).json({
@@ -40,7 +57,8 @@ router.post('/request', protectRoute, async (req, res) => {
   }
 });
 
-router.get('/all', protectRoute, async (req, res) => {
+
+router.get('/all', protectRoute, adminProtect, async (req, res) => {
   try {
     // Retrieve all appointment requests from the database
     const appointmentRequests = await RequestAppointment.find({});
@@ -58,7 +76,7 @@ router.get('/all', protectRoute, async (req, res) => {
 
 // routes/appointment.js
 // UPdate Status
-router.put('/update/:id', protectRoute, async (req, res) => {
+router.put('/update/:id', protectRoute, adminProtect, async (req, res) => {
   try {
     const requestId = req.params.id;
     const { status } = req.body;
@@ -182,7 +200,21 @@ await updatedRequest.save();
   }
 });
 
-
+function getDetailedMessage(notification) {
+  switch (notification.action) {
+    case 'approved':
+      return `Your appointment request has been approved. Scheduled date: ${notification.timestamp}`;
+    case 'rejected':
+      return 'Your appointment request has been rejected.';
+    case 'scheduled':
+      return `Your counseling session has been scheduled for ${notification.timestamp}`;
+    // Add more cases for other notification actions
+    case 'scheduled Changed':
+      return `Your counseling scheduled has changed to ${notification.timestamp}`
+    default:
+      return 'New notification received.';
+  }
+}
 router.get('/notifications', protectRoute, async (req, res) => {
   try {
     const userId = req.user._id;
@@ -193,9 +225,18 @@ router.get('/notifications', protectRoute, async (req, res) => {
       return acc.concat(request.notifications);
     }, []);
 
+    // Map notifications to include detailed messages
+    const notificationsWithDetails = notifications.map((notification) => {
+      const detailedMessage = getDetailedMessage(notification); // Implement this function to get detailed message
+      return {
+        ...notification,
+        detailedMessage,
+      };
+    });
+
     res.status(200).json({
       message: 'Notifications retrieved successfully.',
-      notifications: notifications,
+      notifications: notificationsWithDetails,
     });
   } catch (error) {
     console.error(error);
@@ -203,32 +244,41 @@ router.get('/notifications', protectRoute, async (req, res) => {
   }
 });
 
-router.get('/notification-counts', protectRoute, async (req, res) => {
-  try {
-    const userId = req.user._id;
 
-    const notificationCounts = {};
+// router.get('/notification-counts', protectRoute, async (req, res) => {
+//   try {
+//     const userId = req.user._id;
 
-    // Retrieve notification counts for each user-specific item
-    const notifications = await RequestAppointment.find({ user: userId });
+//     const notificationCounts = {};
 
-    // Count the notifications for each type of action (e.g., 'approved', 'scheduled', etc.)
-    notifications.forEach((notification) => {
-      notification.notifications.forEach((notif) => {
-        if (notif.action in notificationCounts) {
-          notificationCounts[notif.action]++;
-        } else {
-          notificationCounts[notif.action] = 1;
-        }
-      });
-    });
+//     // Retrieve notifications for the user
+//     const notifications = await RequestAppointment.find({ user: userId });
 
-    res.status(200).json({ notificationCounts });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'An error occurred while fetching notification counts.' });
-  }
-});
+//     // Count the notifications for each type of action (e.g., 'approved', 'scheduled', etc.)
+//     notifications.forEach((notification) => {
+//       notification.notifications.forEach((notif) => {
+//         if (notif.action in notificationCounts) {
+//           notificationCounts[notif.action]++;
+//         } else {
+//           notificationCounts[notif.action] = 1;
+//         }
+//       });
+//     });
+
+//     res.status(200).json({ notificationCounts });
+
+//     // Reset the counts to zero without clearing the notifications
+//     const zeroCounts = {};
+//     Object.keys(notificationCounts).forEach((action) => {
+//       zeroCounts[action] = 0;
+//     });
+//     await RequestAppointment.updateMany({ user: userId }, { $set: { notifications: zeroCounts } });
+//   } catch (error) {
+//     console.error(error);
+//     res.status(500).json({ message: 'An error occurred while fetching notification counts.' });
+//   }
+// });
+
 
 module.exports = router;
 
