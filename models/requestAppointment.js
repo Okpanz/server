@@ -22,7 +22,10 @@ const requestAppointmentSchema = new mongoose.Schema(
       default: 'pending',
     },
     scheduledDate: {
-      type: Date,
+      type: String,
+    },
+    counselingToken: { // Add this field for the counseling token
+      type: String,
     },
     notifications: [
       {
